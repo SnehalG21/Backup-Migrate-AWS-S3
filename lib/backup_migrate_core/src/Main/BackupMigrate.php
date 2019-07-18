@@ -152,6 +152,7 @@ class BackupMigrate implements BackupMigrateInterface {
 
       // Let plugins react to a successful operation.
       $this->plugins()->call('restoreSucceed', $file);
+      unlink('/tmp/backup.gz');
     }
     catch (\Exception $e) {
       // Let plugins react to a failed operation.

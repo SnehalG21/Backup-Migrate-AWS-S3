@@ -21,5 +21,8 @@
     "issues": "https://www.drupal.org/project/issues/backup_migrate",
     "source": "http://cgit.drupalcode.org/backup_migrate",
     "slack": "https://drupal.slack.com/messages/C7C4M4QJV/details/"
+  },
+  "require": {
+    "aws/aws-sdk-php": "^3.100"
   }
 }
