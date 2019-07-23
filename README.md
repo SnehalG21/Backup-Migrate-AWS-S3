@@ -29,7 +29,7 @@ For more information on using composer see: https://getcomposer.org/
 
 To upload backup on AWS S3 :
 
-`1. Add S3 destination : /admin/config/development/backup_migrate/settings/destination. Select  Amazon S3`
+`1. Add S3 destination : /admin/config/development/backup_migrate/settings/destination. Select Amazon S3`
 
 `2. Enter details needed to create S3 client.`
 

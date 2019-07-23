@@ -8,7 +8,7 @@ namespace BackupMigrate\Drupal\Destination;
  */
 
 use BackupMigrate\Core\Destination\S3Destination;
-use Drupal;
+use Drupal\Core\Messenger\MessengerTrait;
 
 /**
  * Class DrupalS3Destination.
@@ -16,6 +16,8 @@ use Drupal;
  * @package BackupMigrate\Drupal\Destination
  */
 class DrupalS3Destination extends S3Destination {
+
+  use MessengerTrait;
 
   /**
    * Init configurations.
@@ -28,7 +30,6 @@ class DrupalS3Destination extends S3Destination {
       $schema['fields']['host'] = [
         'type' => 'text',
         'title' => t('Host'),
-        'default' => 's3.amazonaws.com',
         'required' => TRUE,
         'description' => t('Enter Host name. For e.g. <i>s3.amazonaws.com</i>'),
       ];
@@ -46,8 +47,7 @@ class DrupalS3Destination extends S3Destination {
         'description' => t('Enter region. For e.g. <i>ap-south-1</i>'),
       ];
 
-      Drupal::messenger()->addMessage('Please store Access Key Id and Secret Access Key in settings.php. Add access key like $settings[backup_migrate_aws_access_key] = key and $settings[backup_migrate_aws_key_id] = id.', 'warning');
-
+      $this->messenger()->addWarning('Please store Access Key Id and Secret Access Key in settings.php. Add access key like $settings[backup_migrate_aws_access_key] = key and $settings[backup_migrate_aws_key_id] = id.');
     }
 
     return $schema;

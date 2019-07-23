@@ -15,8 +15,8 @@ use BackupMigrate\Core\File\BackupFile;
 use BackupMigrate\Core\File\BackupFileInterface;
 use BackupMigrate\Core\File\BackupFileReadableInterface;
 use BackupMigrate\Core\File\ReadableStreamBackupFile;
-use Drupal;
 use Drupal\Core\Site\Settings;
+use Drupal\Core\Messenger\MessengerTrait;
 
 /**
  * Class S3Destination.
@@ -24,6 +24,9 @@ use Drupal\Core\Site\Settings;
  * @package BackupMigrate\Core\Destination
  */
 class S3Destination extends DestinationBase implements RemoteDestinationInterface, ListableDestinationInterface, ReadableDestinationInterface, ConfigurableInterface {
+
+  use MessengerTrait;
+
   /**
    * Stores client.
    *
@@ -171,11 +174,11 @@ class S3Destination extends DestinationBase implements RemoteDestinationInterfac
           ]);
         }
         else {
-          Drupal::messenger()->addMessage(t('You must enter Secret key and Key id to use AWS S3.'), 'error');
+          $this->messenger()->addError(t('You must enter Secret key and Key id to use AWS S3.'));
         }
       }
       else {
-        Drupal::messenger()->addMessage(t('Please fill all mandatory fields to create S3 client'), 'error');
+        $this->messenger()->addError(t('Please fill all mandatory fields to create S3 client'));
         return $this->client;
       }
 
@@ -216,7 +219,7 @@ class S3Destination extends DestinationBase implements RemoteDestinationInterfac
         'Key' => $filename,
         'SourceFile' => $file_loc,
       ]);
-      Drupal::messenger()->addMessage('Your backup has been saved to your S3 account.' . $result['ObjectURL'], 'status');
+      $this->messenger()->addStatus('Your backup has been saved to your S3 account.' . $result['ObjectURL']);
       return $result;
     }
     catch (BackupMigrateException $e) {
