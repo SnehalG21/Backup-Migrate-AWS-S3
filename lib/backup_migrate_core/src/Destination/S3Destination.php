@@ -63,7 +63,7 @@ class S3Destination extends DestinationBase implements RemoteDestinationInterfac
    * {@inheritdoc}
    */
   protected function _saveFile(BackupFileReadableInterface $file) {
-    $this->backupFilesAWS($this->getClient(), $file->getFullName(), $file->realpath());
+    $this->backupFilesAWS($file->getFullName(), $file->realpath(), $this->getClient());
   }
 
   /**
@@ -129,19 +129,21 @@ class S3Destination extends DestinationBase implements RemoteDestinationInterfac
    */
   public function listFiles($count = 100, $start = 0) {
     $file_list = [];
-    $iterator = $this->getClient()->getIterator('ListObjects', ['Bucket' => $this->confGet('s3_bucket')]);
-    foreach ($iterator as $object) {
-      $file_list[] = $object;
-    }
-
     $files = [];
-    foreach ($file_list as $file) {
-      $filename = !empty($file['filename']) ? $file['filename'] : $file['Key'];
-      $out = new BackupFile();
-      $out->setMeta('id', $filename);
-      $out->setMetaMultiple($file);
-      $out->setFullName($filename);
-      $files[$filename] = $out;
+    if (!empty($this->getClient())) {
+      $iterator = $this->getClient()->getIterator('ListObjects', ['Bucket' => $this->confGet('s3_bucket')]);
+      foreach ($iterator as $object) {
+        $file_list[] = $object;
+      }
+
+      foreach ($file_list as $file) {
+        $filename = !empty($file['filename']) ? $file['filename'] : $file['Key'];
+        $out = new BackupFile();
+        $out->setMeta('id', $filename);
+        $out->setMetaMultiple($file);
+        $out->setFullName($filename);
+        $files[$filename] = $out;
+      }
     }
 
     return $files;
@@ -175,11 +177,12 @@ class S3Destination extends DestinationBase implements RemoteDestinationInterfac
         }
         else {
           $this->messenger()->addError(t('You must enter Secret key and Key id to use AWS S3.'));
+          \Drupal::logger('backup_migrate')->error('You must enter Secret key and Key id to use AWS S3.');
         }
       }
       else {
         $this->messenger()->addError(t('Please fill all mandatory fields to create S3 client'));
-        return $this->client;
+        \Drupal::logger('backup_migrate')->error('Please fill all mandatory fields to create S3 client');
       }
 
     }
@@ -210,23 +213,28 @@ class S3Destination extends DestinationBase implements RemoteDestinationInterfac
   /**
    * To upload backup on AWS S3.
    */
-  protected function backupFilesAWS(S3Client $client, $filename, $file_loc) {
-    try {
-      $bucket = $this->confGet('s3_bucket');
-      // Use putObject() to upload object into bucket.
-      $result = $client->putObject([
-        'Bucket' => $bucket,
-        'Key' => $filename,
-        'SourceFile' => $file_loc,
-      ]);
-      $this->messenger()->addStatus('Your backup has been saved to your S3 account.' . $result['ObjectURL']);
-      return $result;
-    }
-    catch (BackupMigrateException $e) {
-      throw new BackupMigrateException(
-         'Could not upload to S3: %err (code: %code)',
+  protected function backupFilesAWS($filename, $file_loc, $client = NULL) {
+    if (!empty($client)) {
+      try {
+        $bucket = $this->confGet('s3_bucket');
+        // Use putObject() to upload object into bucket.
+        $result = $client->putObject([
+            'Bucket' => $bucket,
+            'Key' => $filename,
+            'SourceFile' => $file_loc,
+        ]);
+        $this->messenger()->addStatus('Your backup has been saved to your S3 account.' . $result['ObjectURL']);
+        return $result;
+      } catch (BackupMigrateException $e) {
+        throw new BackupMigrateException(
+            'Could not upload to S3: %err (code: %code)',
             ['%err' => $e->getMessage(), '%code' => $e->getCode()]
-      );
+        );
+      }
+    }
+    else {
+      $this->messenger()->addError(t('Please fill all mandatory fields to create S3 client'));
+      \Drupal::logger('backup_migrate')->error('Please fill all mandatory fields to create S3 client');
     }
   }
 
